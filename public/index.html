@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Extractor</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Email Extractor</h1>
+
+  <form id="extractForm">
+    <label for="url">Enter URL:</label>
+    <input type="text" id="url" required placeholder="https://example.com">
+    <button type="submit">Extract Emails</button>
+  </form>
+
+  <div id="results">
+    <h2>Results:</h2>
+    <p id="message"></p>
+    <ul id="emails"></ul>
+    <a id="downloadLink" href="#" style="display:none;">Download CSV</a>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
