@@ -1,34 +1,43 @@
-document.getElementById('extractForm').addEventListener('submit', async (event) => {
-  event.preventDefault();
+document.getElementById('extractForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
   const url = document.getElementById('url').value;
-  document.getElementById('message').textContent = 'Processing...';
-  document.getElementById('emails').innerHTML = '';
-  document.getElementById('downloadLink').style.display = 'none';
+  const messageEl = document.getElementById('message');
+  const emailsEl = document.getElementById('emails');
+  const downloadEl = document.getElementById('downloadLink');
+
+  messageEl.textContent = "Loading...";
+  emailsEl.innerHTML = "";
+  downloadEl.style.display = "none";
 
   try {
+    // Fetch page HTML
+    const pageResponse = await fetch(url);
+    const pageContent = await pageResponse.text();
+
+    // Send to backend for email extraction
     const response = await fetch('/extract-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, pageContent: 'Your webpage HTML content here' }), // Replace accordingly
+      body: JSON.stringify({ url, pageContent })
     });
 
     const data = await response.json();
 
-    document.getElementById('message').textContent = data.message;
+    messageEl.textContent = data.message;
 
-    if (data.emails && data.emails.length > 0) {
-      data.emails.forEach((email) => {
+    if (data.emails.length > 0) {
+      data.emails.forEach(email => {
         const li = document.createElement('li');
         li.textContent = email;
-        document.getElementById('emails').appendChild(li);
+        emailsEl.appendChild(li);
       });
 
-      document.getElementById('downloadLink').style.display = 'block';
-      document.getElementById('downloadLink').setAttribute('href', data.downloadLink);
+      downloadEl.href = data.downloadLink;
+      downloadEl.style.display = "inline-block";
     }
+
   } catch (error) {
-    console.error('Error processing:', error);
-    document.getElementById('message').textContent = 'An error occurred.';
+    messageEl.textContent = "Error fetching the page.";
   }
 });
