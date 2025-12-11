@@ -1,58 +1,47 @@
 const express = require('express');
-const fetch = require('node-fetch');
-const { validateAndExtractEmails, exportToCSV } = require('./helpers');
 const path = require('path');
 const fs = require('fs');
+const { validateAndExtractEmails } = require('./helpers');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware to handle JSON requests
-app.use(express.json());
+// Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
-// Endpoint to fetch webpage content and extract emails
-app.post('/extract-emails', async (req, res) => {
-  const { url } = req.body;
+// API endpoint
+app.post('/extract-emails', (req, res) => {
+  const { url, pageContent } = req.body;
 
-  if (!url || !url.startsWith('http')) {
-    return res.status(400).json({ error: 'Invalid URL. Please provide a valid URL that starts with http or https.' });
+  if (!url || !pageContent) {
+    return res.status(400).json({ error: 'URL and page content are required.' });
   }
 
-  try {
-    // Fetch the webpage content
-    const response = await fetch(url);
-    const pageContent = await response.text();
+  const emails = validateAndExtractEmails(pageContent);
 
-    // Extract emails using helper function
-    const emails = validateAndExtractEmails(pageContent);
+  if (emails.length > 0) {
+    const filePath = path.join(__dirname, 'emails.csv');
+    const csvData = 'Email\n' + emails.join('\n');
+    fs.writeFileSync(filePath, csvData, 'utf8');
 
-    if (emails.length > 0) {
-      // Save emails to a CSV file
-      const filePath = path.join(__dirname, 'emails.csv');
-      exportToCSV(emails, filePath);
-
-      return res.status(200).json({
-        message: `${emails.length} emails found.`,
-        emails,
-        downloadLink: '/emails.csv',
-      });
-    } else {
-      return res.status(200).json({ message: 'No emails found.', emails: [] });
-    }
-  } catch (error) {
-    console.error('Error fetching or processing URL:', error);
-    return res.status(500).json({ error: 'Failed to fetch or process the webpage.' });
+    return res.status(200).json({
+      message: `${emails.length} emails found.`,
+      emails,
+      downloadLink: '/emails.csv'
+    });
   }
+
+  return res.status(200).json({ message: 'No emails found.', emails: [] });
 });
 
-// Endpoint for CSV download
+// Download route
 app.get('/emails.csv', (req, res) => {
   const filePath = path.join(__dirname, 'emails.csv');
   res.download(filePath, 'emails.csv');
 });
 
-// Start the Express server
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
